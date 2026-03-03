@@ -18,18 +18,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 public class Spanglish {
 // Configuration
-private static final String API_KEY = "api_key";
+private static final String API_KEY = System.getenv("ASSEMBLYAI_API_KEY"); // FIX #3: API key must come from an environment variable, not be hardcoded.
 private static final int SAMPLE_RATE = 16000;
 private static final int CHANNELS = 1;
 private static final int SAMPLE_SIZE_IN_BITS = 16;
-private static final int FRAMES_PER_BUFFER = 400; // 25ms of audio (0.025s
-* 16000Hz)
+private static final int FRAMES_PER_BUFFER = 400; // 25ms of audio (0.025s* 16000Hz) FIX #2: The URL string was broken across two lines in the original code.
 
 private static final String API_ENDPOINT = String.format(
-"wss://streaming.assemblyai.com/v3/ws?sample_rate=%d&encoding=opus&format_turns
-=true",
+"wss://streaming.assemblyai.com/v3/ws?sample_rate=%d&encoding=pcm_s16le&format_turns
+=true&language_code=es",
 SAMPLE_RATE
-);
+); // FIX #2, #4, and #5: API Audio format needs to match the microphone settings with raw PCM (uncompressed bytes) and added language_code for multilingual English/Spanish support.
 // Audio recording
 private TargetDataLine microphone;
 private final List<byte[]> recordedFrames = new ArrayList<>();
@@ -39,7 +38,7 @@ private final Gson gson = new Gson();
 private AssemblyAIWebSocketClient wsClient;
 private Thread audioThread;
 public static void main(String[] args) {
-StreamingTranscription transcription = new StreamingTranscription();
+Spanglish transcription = new Spanglish(); // FIX #1: The original code said "new StreamingTranscription()" here. That class doesn't exist anywhere — the class is named Spanglish.
 transcription.run();
 }
 public void run() {
@@ -98,8 +97,7 @@ microphone.start();
 audioThread = new Thread(() -> {
 
 System.out.println("Starting audio streaming...");
-byte[] buffer = new byte[FRAMES_PER_BUFFER * 2]; // 2 bytes per
-sample (16-bit)
+byte[] buffer = new byte[FRAMES_PER_BUFFER * 2]; // 2 bytes per sample (16-bit) -> FIX #5: Comment was broken in two lines here 
 while (!stopRequested.get() && isRecording.get()) {
 try {
 int bytesRead = microphone.read(buffer, 0, buffer.length);
